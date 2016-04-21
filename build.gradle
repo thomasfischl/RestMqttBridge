@@ -1,9 +1,14 @@
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+	    	url "https://plugins.gradle.org/m2/"
+	    }
+	    jcenter()
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:1.3.3.RELEASE")
+        classpath("com.bmuschko:gradle-docker-plugin:2.6.5")
     }
 }
 
@@ -11,6 +16,11 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'spring-boot'
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+/* ***************************************************************************** */
+/*   Gradle Java Configuration                                                   */
+/* ***************************************************************************** */
 
 jar {
     baseName = 'com.github.thomasfischl.restmqttbridge'
@@ -31,6 +41,53 @@ dependencies {
     testCompile("junit:junit")
 }
 
+/* ***************************************************************************** */
+/*   Gradle Docker Configuration                                                 */
+/* ***************************************************************************** */
+
+docker {
+    url = System.getenv('DOCKER_HOST')
+}
+
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+
+task prepareDocker(type: Copy) {
+	from 'src/main/docker'
+	from 'build/libs'
+	from 'src/main/resources/application.properties'
+	from 'application.properties'
+	into {
+		'build/docker'
+	}
+}
+
+task buildImage(type: DockerBuildImage) {
+	dependsOn prepareDocker
+    inputDir = project.file('build/docker')
+    tag = 'rest-mqtt-bridge-sarah'
+}
+
+task createContainer(type: DockerCreateContainer) {
+    imageId = 'rest-mqtt-bridge-sarah'
+    containerName = 'rest-mqtt-bridge-sarah'
+	portBindings = ['9901:8080']
+}
+
+task startContainer(type: DockerStartContainer) {
+    dependsOn createContainer
+    targetContainerId { createContainer.getContainerId() }
+}
+
+task removeContainer(type: DockerRemoveContainer) {
+	containerId = 'rest-mqtt-bridge-sarah'
+    force = true
+}
+
+/* ***************************************************************************** */
+/*   Others                                                                      */
+/* ***************************************************************************** */
+
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.3'
+    gradleVersion = '2.6'
 }
