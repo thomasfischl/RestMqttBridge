@@ -50,6 +50,13 @@ gradlew build
 gradlew bootRun
 ```
 
+Start Docker container with service
+
+```
+gradlew removeContainer (optional)
+gradlew buildImage startContainer
+```
+
 # Test
 
 HiveMQ has a demo broker and client to send test messages.
