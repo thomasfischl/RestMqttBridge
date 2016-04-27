@@ -22,15 +22,16 @@ public class MqttConnector {
 
     private MqttClientPersistence persistence = new MemoryPersistence();
 
-    public void sendMessage(String topic, String content) throws MqttException {
-        MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
+    public void sendMessage(String topic, String content, boolean retained) throws MqttException {
+        MqttClient client = new MqttClient(broker, clientId, persistence);
         MqttConnectOptions connOpts = new MqttConnectOptions();
         connOpts.setCleanSession(true);
-        sampleClient.connect(connOpts);
+        client.connect(connOpts);
         MqttMessage message = new MqttMessage(content.getBytes());
         message.setQos(2);
-        sampleClient.publish(topic, message);
-        sampleClient.disconnect();
+        message.setRetained(retained);
+        client.publish(topic, message);
+        client.disconnect();
     }
 
     public String getBroker() {

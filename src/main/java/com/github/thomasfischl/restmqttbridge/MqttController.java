@@ -14,39 +14,40 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("mqtt")
+@RequestMapping("bridge")
 public class MqttController {
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    @Autowired
-    private MqttConnector connector;
+  @Autowired
+  private MqttConnector connector;
 
-    @RequestMapping(value = "/send", method = RequestMethod.PUT)
-    public void update(@RequestParam(value = "topic") String topic, @RequestBody String content) {
-        try {
-            connector.sendMessage(topic, content);
-        } catch (MqttException e) {
-            log.error("An error occurs during sending mqtt message '" + content + "'.", e);
-        }
+  @RequestMapping(value = "/send", method = RequestMethod.PUT)
+  public void update(@RequestParam(value = "topic") String topic, @RequestBody String content,
+      @RequestParam(value = "retain", defaultValue = "true", required = false) String retain) {
+    try {
+      connector.sendMessage(topic, content, Boolean.valueOf(retain));
+    } catch (MqttException e) {
+      log.error("An error occurs during sending mqtt message '" + content + "'.", e);
     }
+  }
 
-    @RequestMapping("/try")
-    public String trySend() {
-        try {
-            connector.sendMessage("test", "Hello World");
-            return "OK";
-        } catch (MqttException e) {
-            log.error("An error occurs during sending mqtt message.", e);
-            return e.getMessage();
-        }
+  @RequestMapping("/try")
+  public String trySend() {
+    try {
+      connector.sendMessage("test", "Hello World", false);
+      return "OK";
+    } catch (MqttException e) {
+      log.error("An error occurs during sending mqtt message.", e);
+      return e.getMessage();
     }
+  }
 
-    @RequestMapping("/config")
-    public Map<String, String> getConfig() {
-        Map<String, String> config = new HashMap<>();
-        config.put("clientId", connector.getClientId());
-        config.put("broker", connector.getBroker());
-        return config;
-    }
+  @RequestMapping("/config")
+  public Map<String, String> getConfig() {
+    Map<String, String> config = new HashMap<>();
+    config.put("clientId", connector.getClientId());
+    config.put("broker", connector.getBroker());
+    return config;
+  }
 }
